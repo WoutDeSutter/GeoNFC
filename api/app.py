@@ -1,24 +1,25 @@
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from .database import Database
+from .scheduler import init_scheduler
 import os
 
 app = Flask(__name__, static_folder='../static')
 CORS(app)
+
+# Initialiseer de database
 db = Database()
 
-# API Routes
-@app.route('/api/caches')
-def get_caches():
-    tags = db.get_all_tags()
-    return jsonify([{
-        'tag_id': tag[0],
-        'latitude': tag[1],
-        'longitude': tag[2],
-        'last_updated': tag[3].isoformat() if tag[3] else None
-    } for tag in tags])
+# Initialiseer de scheduler
+init_scheduler()
 
-@app.route('/api/tag/<tag_id>')
+# API Routes
+@app.route('/api/caches', methods=['GET'])
+def get_caches():
+    caches = db.get_all_tags()
+    return jsonify(caches)
+
+@app.route('/api/tag/<tag_id>', methods=['GET'])
 def get_tag(tag_id):
     print(f"\nAPI: Zoeken naar tag {tag_id}")
     try:
@@ -27,61 +28,38 @@ def get_tag(tag_id):
             print(f"API: Tag {tag_id} niet gevonden")
             return jsonify({'error': f'Tag {tag_id} not found'}), 404
         print(f"API: Tag gevonden: {tag}")
-        return jsonify({
-            'tag_id': tag[0],
-            'latitude': tag[1],
-            'longitude': tag[2],
-            'last_updated': tag[3].isoformat() if tag[3] else None
-        })
+        return jsonify(tag)
     except Exception as e:
         print(f"API Error bij ophalen tag: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/log', methods=['POST'])
-def create_log():
+def add_log():
     data = request.json
-    tag_id = data.get('tag_id')
-    username = data.get('username')
-    message = data.get('message')
-    latitude = data.get('latitude')
-    longitude = data.get('longitude')
-    
-    if not all([tag_id, username, message, latitude, longitude]):
+    if not all(k in data for k in ['tag_id', 'username', 'message', 'latitude', 'longitude']):
         return jsonify({'error': 'Missing required fields'}), 400
     
-    # Check if tag exists
-    tag = db.get_tag(tag_id)
-    if not tag:
-        return jsonify({'error': 'Tag not found'}), 404
+    success = db.add_log(
+        data['tag_id'],
+        data['username'],
+        data['message'],
+        data['latitude'],
+        data['longitude']
+    )
     
-    # Add log and update tag location
-    db.add_log(tag_id, username, message, latitude, longitude)
-    db.update_tag_location(tag_id, latitude, longitude)
-    
-    return jsonify({'success': True})
+    if success:
+        return jsonify({'message': 'Log added successfully'})
+    return jsonify({'error': 'Failed to add log'}), 500
 
-@app.route('/api/logs/<tag_id>')
+@app.route('/api/logs/<tag_id>', methods=['GET'])
 def get_logs(tag_id):
-    logs = db.get_tag_logs(tag_id)
-    return jsonify([{
-        'username': log[0],
-        'message': log[1],
-        'latitude': log[2],
-        'longitude': log[3],
-        'timestamp': log[4].isoformat() if log[4] else None
-    } for log in logs])
+    logs = db.get_logs(tag_id)
+    return jsonify(logs)
 
-@app.route('/api/all-logs')
+@app.route('/api/all-logs', methods=['GET'])
 def get_all_logs():
     logs = db.get_all_logs()
-    return jsonify([{
-        'tag_id': log[0],
-        'username': log[1],
-        'message': log[2],
-        'latitude': log[3],
-        'longitude': log[4],
-        'timestamp': log[5].isoformat() if log[5] else None
-    } for log in logs])
+    return jsonify(logs)
 
 @app.route('/api/create_test_tag')
 def create_test_tag():
