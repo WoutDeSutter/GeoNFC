@@ -235,7 +235,16 @@ async function handleLogSubmit(event) {
         }
         
         alert('Log succesvol toegevoegd!');
-        window.location.href = 'index.html';
+        // Navigate back to index.html after successful log submission
+        // window.location.href = 'index.html';
+
+        // Instead of navigating, re-fetch caches to update the map
+        if (document.getElementById('map')) {
+            fetchCaches();
+            // Optionally, provide user feedback that the map is updating
+             alert('Log succesvol toegevoegd! Kaart wordt bijgewerkt...');
+        }
+
     } catch (error) {
         console.error('Error:', error);
         alert(error.message || 'Er is een fout opgetreden bij het toevoegen van de log');
