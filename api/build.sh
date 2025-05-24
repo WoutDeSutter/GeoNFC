@@ -2,5 +2,14 @@
 # exit on error
 set -o errexit
 
-# Install dependencies
+# Upgrade pip
+python -m pip install --upgrade pip
+
+# Install wheel first
+pip install wheel
+
+# Install mysql-connector-python explicitly first
+pip install mysql-connector-python==8.3.0
+
+# Install other dependencies
 pip install -r requirements.txt 
