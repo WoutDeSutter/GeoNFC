@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from .database import Database
-from .scheduler import init_scheduler
+# from .scheduler import init_scheduler
 import os
 
 app = Flask(__name__, static_folder='../static')
@@ -11,7 +11,7 @@ CORS(app)
 db = Database()
 
 # Initialiseer de scheduler
-init_scheduler()
+# init_scheduler()
 
 # API Routes
 @app.route('/api/caches', methods=['GET'])
