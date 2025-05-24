@@ -79,55 +79,6 @@ def get_all_logs():
     print(f"Found {len(logs)} logs: {logs}")
     return jsonify(logs)
 
-@app.route('/api/create_test_tag')
-def create_test_tag():
-    """Maak een test tag aan voor development"""
-    try:
-        print("Test tag aanmaken...")
-        
-        # Eerst controleren of de tag al bestaat
-        existing_tag = db.get_tag('TEST001')
-        if existing_tag:
-            print(f"Tag TEST001 bestaat al: {existing_tag}")
-            return jsonify({
-                'success': True, 
-                'message': 'Test tag TEST001 already exists', 
-                'tag': existing_tag
-            })
-
-        # Tag aanmaken als deze nog niet bestaat
-        print("Proberen test tag aan te maken...")
-        success = db.add_tag('TEST001', 'Test Cache', 50.8503, 4.3517)  # Brussel coördinaten
-        if not success:
-            print("Kon test tag niet aanmaken")
-            return jsonify({
-                'error': 'Failed to create test tag',
-                'details': 'Database operation failed'
-            }), 500
-
-        print("Test tag aangemaakt, controleren of deze bestaat...")
-        tag = db.get_tag('TEST001')
-        print(f"Tag controle resultaat: {tag}")
-        
-        if not tag:
-            print("Tag niet gevonden na aanmaken!")
-            return jsonify({
-                'error': 'Tag not found after creation',
-                'details': 'Tag was created but could not be retrieved'
-            }), 500
-
-        return jsonify({
-            'success': True, 
-            'message': 'Test tag TEST001 created', 
-            'tag': tag
-        })
-    except Exception as e:
-        print(f"Error bij aanmaken test tag: {str(e)}")
-        return jsonify({
-            'error': str(e),
-            'details': 'An unexpected error occurred'
-        }), 500
-
 @app.route('/')
 def index():
     return send_from_directory('..', 'index.html')
@@ -141,4 +92,5 @@ def logs_page():
     return send_from_directory('..', 'logs.html')
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000) 
+    port = int(os.environ.get('PORT', 10000))
+    app.run(host='0.0.0.0', port=port) 
