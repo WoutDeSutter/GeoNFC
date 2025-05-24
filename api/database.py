@@ -1,14 +1,15 @@
 import mysql.connector
 import os
 from datetime import datetime
+from .config import Config
 
 class Database:
     def __init__(self):
         self.config = {
-            'host': 'localhost',
-            'user': 'root',  # Pas dit aan naar je MySQL gebruikersnaam
-            'password': 'root',  # Pas dit aan naar je MySQL wachtwoord
-            'database': 'geonfc'  # Aangepaste database naam
+            'host': Config.DB_HOST,
+            'user': Config.DB_USER,
+            'password': Config.DB_PASSWORD,
+            'database': Config.DB_NAME
         }
         try:
             self.init_db()

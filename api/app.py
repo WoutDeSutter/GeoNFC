@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-from database import Database
+from .database import Database
 import os
 
 app = Flask(__name__, static_folder='../static')
