@@ -76,6 +76,7 @@ def create_test_tag():
     """Maak een test tag aan voor development"""
     try:
         print("Test tag aanmaken...")
+        
         # Eerst controleren of de tag al bestaat
         existing_tag = db.get_tag('TEST001')
         if existing_tag:
@@ -87,10 +88,14 @@ def create_test_tag():
             })
 
         # Tag aanmaken als deze nog niet bestaat
+        print("Proberen test tag aan te maken...")
         success = db.add_tag('TEST001', 'Test Cache', 50.8503, 4.3517)  # Brussel coördinaten
         if not success:
             print("Kon test tag niet aanmaken")
-            return jsonify({'error': 'Failed to create test tag'}), 500
+            return jsonify({
+                'error': 'Failed to create test tag',
+                'details': 'Database operation failed'
+            }), 500
 
         print("Test tag aangemaakt, controleren of deze bestaat...")
         tag = db.get_tag('TEST001')
@@ -98,7 +103,10 @@ def create_test_tag():
         
         if not tag:
             print("Tag niet gevonden na aanmaken!")
-            return jsonify({'error': 'Tag not found after creation'}), 500
+            return jsonify({
+                'error': 'Tag not found after creation',
+                'details': 'Tag was created but could not be retrieved'
+            }), 500
 
         return jsonify({
             'success': True, 
@@ -107,7 +115,10 @@ def create_test_tag():
         })
     except Exception as e:
         print(f"Error bij aanmaken test tag: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({
+            'error': str(e),
+            'details': 'An unexpected error occurred'
+        }), 500
 
 @app.route('/')
 def index():

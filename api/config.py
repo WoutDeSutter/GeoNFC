@@ -9,7 +9,7 @@ class Config:
     DB_PORT = int(os.getenv('DB_PORT', '3306'))  # Default MySQL port
     DB_USER = os.getenv('DB_USER', 'root')
     DB_PASSWORD = os.getenv('DB_PASSWORD', 'root')
-    DB_NAME = os.getenv('DB_NAME', 'geonfc')
+    DB_NAME = os.getenv('DB_NAME', 'geonfc')  # Using geonfc as default database
     
     # API configuration
     API_URL = os.getenv('API_URL', 'http://localhost:5000')

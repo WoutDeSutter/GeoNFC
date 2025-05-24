@@ -14,6 +14,21 @@ class Database:
     def connect_with_retry(self):
         for attempt in range(self.max_retries):
             try:
+                # First connect without database to create it if it doesn't exist
+                temp_conn = mysql.connector.connect(
+                    host=Config.DB_HOST,
+                    port=Config.DB_PORT,
+                    user=Config.DB_USER,
+                    password=Config.DB_PASSWORD
+                )
+                cursor = temp_conn.cursor()
+                
+                # Create database if it doesn't exist
+                cursor.execute(f"CREATE DATABASE IF NOT EXISTS {Config.DB_NAME}")
+                cursor.close()
+                temp_conn.close()
+                
+                # Now connect to the specific database
                 self.conn = mysql.connector.connect(
                     host=Config.DB_HOST,
                     port=Config.DB_PORT,
