@@ -14,6 +14,9 @@ class Database:
     def connect_with_retry(self):
         for attempt in range(self.max_retries):
             try:
+                print(f"Attempting database connection (attempt {attempt + 1}/{self.max_retries})")
+                print(f"Connection details: host={Config.DB_HOST}, port={Config.DB_PORT}, user={Config.DB_USER}, database={Config.DB_NAME}")
+                
                 # First connect without database to create it if it doesn't exist
                 temp_conn = mysql.connector.connect(
                     host=Config.DB_HOST,
@@ -21,14 +24,18 @@ class Database:
                     user=Config.DB_USER,
                     password=Config.DB_PASSWORD
                 )
+                print("Initial connection successful")
                 cursor = temp_conn.cursor()
                 
                 # Create database if it doesn't exist
+                print(f"Creating database {Config.DB_NAME} if it doesn't exist")
                 cursor.execute(f"CREATE DATABASE IF NOT EXISTS {Config.DB_NAME}")
                 cursor.close()
                 temp_conn.close()
+                print("Database creation/verification successful")
                 
                 # Now connect to the specific database
+                print("Connecting to specific database")
                 self.conn = mysql.connector.connect(
                     host=Config.DB_HOST,
                     port=Config.DB_PORT,
@@ -41,7 +48,10 @@ class Database:
                 self.initialize_database()
                 return
             except mysql.connector.Error as err:
-                print(f"Database connection attempt {attempt + 1} failed: {err}")
+                print(f"MySQL Error during connection attempt {attempt + 1}:")
+                print(f"Error Code: {err.errno}")
+                print(f"Error Message: {err.msg}")
+                print(f"SQL State: {err.sqlstate}")
                 if attempt < self.max_retries - 1:
                     print(f"Retrying in {self.retry_delay} seconds...")
                     time.sleep(self.retry_delay)
@@ -62,20 +72,28 @@ class Database:
     def initialize_database(self):
         print("Initializing database tables...")
         try:
+            # Drop existing tables if they exist
+            print("Dropping existing tables if they exist...")
+            self.cursor.execute("DROP TABLE IF EXISTS logs")
+            self.cursor.execute("DROP TABLE IF EXISTS tags")
+            
             # Create tags table
+            print("Creating tags table...")
             self.cursor.execute("""
-                CREATE TABLE IF NOT EXISTS tags (
-                    id VARCHAR(50) PRIMARY KEY,
+                CREATE TABLE tags (
+                    tag_id VARCHAR(50) PRIMARY KEY,
                     name VARCHAR(100) NOT NULL,
                     latitude FLOAT NOT NULL,
-                    longitude FLOAT NOT NULL
+                    longitude FLOAT NOT NULL,
+                    last_updated DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
                 )
             """)
-            print("Tags table created/verified")
+            print("Tags table created")
             
             # Create logs table
+            print("Creating logs table...")
             self.cursor.execute("""
-                CREATE TABLE IF NOT EXISTS logs (
+                CREATE TABLE logs (
                     id INT AUTO_INCREMENT PRIMARY KEY,
                     tag_id VARCHAR(50) NOT NULL,
                     username VARCHAR(100) NOT NULL,
@@ -83,10 +101,10 @@ class Database:
                     latitude FLOAT NOT NULL,
                     longitude FLOAT NOT NULL,
                     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
+                    FOREIGN KEY (tag_id) REFERENCES tags(tag_id) ON DELETE CASCADE
                 )
             """)
-            print("Logs table created/verified")
+            print("Logs table created")
             
             self.conn.commit()
             print("Database tables initialized successfully")
@@ -96,8 +114,21 @@ class Database:
             tables = self.cursor.fetchall()
             print(f"Existing tables: {tables}")
             
+            # Verify table structure
+            print("Verifying table structure...")
+            self.cursor.execute("DESCRIBE tags")
+            tags_structure = self.cursor.fetchall()
+            print(f"Tags table structure: {tags_structure}")
+            
+            self.cursor.execute("DESCRIBE logs")
+            logs_structure = self.cursor.fetchall()
+            print(f"Logs table structure: {logs_structure}")
+            
         except mysql.connector.Error as err:
             print(f"Error initializing database: {err}")
+            print(f"Error Code: {err.errno}")
+            print(f"Error Message: {err.msg}")
+            print(f"SQL State: {err.sqlstate}")
             raise
 
     def cleanup_inactive_caches(self, days_inactive=365):
@@ -144,35 +175,44 @@ class Database:
             print(f"Adding tag {tag_id} with name {name} at {latitude}, {longitude}")
             
             # First check if tag exists
-            self.cursor.execute("SELECT * FROM tags WHERE id = %s", (tag_id,))
-            existing_tag = self.cursor.fetchone()
+            print("Checking if tag already exists using get_tag")
+            existing_tag = self.get_tag(tag_id)
             if existing_tag:
                 print(f"Tag {tag_id} already exists: {existing_tag}")
                 return True
             
             # Add new tag
-            self.cursor.execute(
-                "INSERT INTO tags (id, name, latitude, longitude) VALUES (%s, %s, %s, %s)",
-                (tag_id, name, latitude, longitude)
-            )
+            print("Inserting new tag")
+            query = "INSERT INTO tags (tag_id, name, latitude, longitude) VALUES (%s, %s, %s, %s)"
+            params = (tag_id, name, latitude, longitude)
+            print(f"Executing query: {query} with params: {params}")
+            self.cursor.execute(query, params)
+            print("Committing transaction")
             self.conn.commit()
             print("Tag added successfully")
             
             # Verify tag was added
             def verify_tag():
-                self.cursor.execute("SELECT * FROM tags WHERE id = %s", (tag_id,))
-                return self.cursor.fetchone() is not None
+                print("Verifying tag was added using get_tag")
+                return self.get_tag(tag_id) is not None
 
             if self.wait_for_operation("Tag verification", verify_tag):
+                print(f"Tag {tag_id} successfully verified.")
                 return True
-            return False
+            else:
+                print(f"Tag {tag_id} verification failed.")
+                return False
 
         except mysql.connector.Error as err:
-            print(f"MySQL Error adding tag: {err}")
+            print(f"MySQL Error adding tag:")
+            print(f"Error Code: {err.errno}")
+            print(f"Error Message: {err.msg}")
+            print(f"SQL State: {err.sqlstate}")
             self.conn.rollback()
             return False
         except Exception as e:
             print(f"Unexpected error adding tag: {str(e)}")
+            print(f"Error type: {type(e)}")
             self.conn.rollback()
             return False
 
@@ -181,7 +221,9 @@ class Database:
             print(f"Executing get_tag query for {tag_id}...")
             
             def get_tag_with_retry():
-                self.cursor.execute("SELECT * FROM tags WHERE id = %s", (tag_id,))
+                query = "SELECT * FROM tags WHERE tag_id = %s"
+                print(f"Executing query: {query} with params: ({tag_id},)")
+                self.cursor.execute(query, (tag_id,))
                 return self.cursor.fetchone()
 
             # Probeer de tag meerdere keren op te halen
@@ -197,7 +239,10 @@ class Database:
             return None
 
         except mysql.connector.Error as err:
-            print(f"MySQL Error getting tag: {err}")
+            print(f"MySQL Error getting tag:")
+            print(f"Error Code: {err.errno}")
+            print(f"Error Message: {err.msg}")
+            print(f"SQL State: {err.sqlstate}")
             return None
         except Exception as e:
             print(f"Unexpected error getting tag: {str(e)}")
