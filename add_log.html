@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log Toevoegen - Geocaching</title>
+    <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+    <header>
+        <h1>Geocaching</h1>
+        <nav>
+            <a href="index.html" class="nav-button">Terug naar Kaart</a>
+        </nav>
+    </header>
+
+    <main class="add-log-page">
+        <div class="form-container">
+            <h2>Log Toevoegen</h2>
+            <form id="addLogForm">
+                <input type="hidden" id="tagId" name="tagId">
+                <div class="form-group">
+                    <label for="username">Gebruikersnaam:</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="message">Bericht:</label>
+                    <textarea id="message" name="message" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="latitude">Latitude:</label>
+                    <input type="number" id="latitude" name="latitude" step="any" required>
+                </div>
+                <div class="form-group">
+                    <label for="longitude">Longitude:</label>
+                    <input type="number" id="longitude" name="longitude" step="any" required>
+                </div>
+                <div class="button-group">
+                    <button type="submit">Log Toevoegen</button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script src="static/js/add_log.js"></script>
+</body>
+</html> 
