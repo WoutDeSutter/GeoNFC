@@ -5,17 +5,24 @@ from .config import Config
 
 class Database:
     def __init__(self):
-        self.conn = mysql.connector.connect(
-            host=Config.DB_HOST,
-            port=Config.DB_PORT,
-            user=Config.DB_USER,
-            password=Config.DB_PASSWORD,
-            database=Config.DB_NAME
-        )
-        self.cursor = self.conn.cursor(dictionary=True)
-        self.initialize_database()
+        print(f"Connecting to database at {Config.DB_HOST}:{Config.DB_PORT}")
+        try:
+            self.conn = mysql.connector.connect(
+                host=Config.DB_HOST,
+                port=Config.DB_PORT,
+                user=Config.DB_USER,
+                password=Config.DB_PASSWORD,
+                database=Config.DB_NAME
+            )
+            print("Database connection successful")
+            self.cursor = self.conn.cursor(dictionary=True)
+            self.initialize_database()
+        except Exception as e:
+            print(f"Database connection error: {str(e)}")
+            raise
 
     def initialize_database(self):
+        print("Initializing database tables...")
         # Create tables if they don't exist
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS tags (
@@ -40,6 +47,7 @@ class Database:
         """)
         
         self.conn.commit()
+        print("Database tables initialized successfully")
 
     def cleanup_inactive_caches(self, days_inactive=365):
         """
@@ -82,11 +90,13 @@ class Database:
 
     def add_tag(self, tag_id, name, latitude, longitude):
         try:
+            print(f"Adding tag {tag_id} with name {name} at {latitude}, {longitude}")
             self.cursor.execute(
                 "INSERT INTO tags (id, name, latitude, longitude) VALUES (%s, %s, %s, %s)",
                 (tag_id, name, latitude, longitude)
             )
             self.conn.commit()
+            print("Tag added successfully")
             return True
         except Exception as e:
             print(f"Error adding tag: {str(e)}")
@@ -94,27 +104,35 @@ class Database:
 
     def get_tag(self, tag_id):
         try:
+            print(f"Executing get_tag query for {tag_id}...")
             self.cursor.execute("SELECT * FROM tags WHERE id = %s", (tag_id,))
-            return self.cursor.fetchone()
+            result = self.cursor.fetchone()
+            print(f"Tag result: {result}")
+            return result
         except Exception as e:
             print(f"Error getting tag: {str(e)}")
             return None
 
     def get_all_tags(self):
         try:
+            print("Executing get_all_tags query...")
             self.cursor.execute("SELECT * FROM tags")
-            return self.cursor.fetchall()
+            results = self.cursor.fetchall()
+            print(f"Found {len(results)} tags")
+            return results
         except Exception as e:
             print(f"Error getting all tags: {str(e)}")
             return []
 
     def add_log(self, tag_id, username, message, latitude, longitude):
         try:
+            print(f"Adding log for tag {tag_id} by {username}")
             self.cursor.execute(
                 "INSERT INTO logs (tag_id, username, message, latitude, longitude) VALUES (%s, %s, %s, %s, %s)",
                 (tag_id, username, message, latitude, longitude)
             )
             self.conn.commit()
+            print("Log added successfully")
             return True
         except Exception as e:
             print(f"Error adding log: {str(e)}")
@@ -122,16 +140,22 @@ class Database:
 
     def get_logs(self, tag_id):
         try:
+            print(f"Getting logs for tag {tag_id}")
             self.cursor.execute("SELECT * FROM logs WHERE tag_id = %s ORDER BY timestamp DESC", (tag_id,))
-            return self.cursor.fetchall()
+            results = self.cursor.fetchall()
+            print(f"Found {len(results)} logs")
+            return results
         except Exception as e:
             print(f"Error getting logs: {str(e)}")
             return []
 
     def get_all_logs(self):
         try:
+            print("Getting all logs")
             self.cursor.execute("SELECT * FROM logs ORDER BY timestamp DESC")
-            return self.cursor.fetchall()
+            results = self.cursor.fetchall()
+            print(f"Found {len(results)} logs")
+            return results
         except Exception as e:
             print(f"Error getting all logs: {str(e)}")
             return []
@@ -140,4 +164,5 @@ class Database:
         if hasattr(self, 'cursor'):
             self.cursor.close()
         if hasattr(self, 'conn'):
-            self.conn.close() 
+            self.conn.close()
+            print("Database connection closed") 

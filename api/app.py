@@ -16,7 +16,9 @@ init_scheduler()
 # API Routes
 @app.route('/api/caches', methods=['GET'])
 def get_caches():
+    print("Fetching all caches...")
     caches = db.get_all_tags()
+    print(f"Found {len(caches)} caches: {caches}")
     return jsonify(caches)
 
 @app.route('/api/tag/<tag_id>', methods=['GET'])
@@ -36,7 +38,9 @@ def get_tag(tag_id):
 @app.route('/api/log', methods=['POST'])
 def add_log():
     data = request.json
+    print(f"Received log data: {data}")
     if not all(k in data for k in ['tag_id', 'username', 'message', 'latitude', 'longitude']):
+        print("Missing required fields in log data")
         return jsonify({'error': 'Missing required fields'}), 400
     
     success = db.add_log(
@@ -48,17 +52,23 @@ def add_log():
     )
     
     if success:
+        print("Log successfully added")
         return jsonify({'message': 'Log added successfully'})
+    print("Failed to add log")
     return jsonify({'error': 'Failed to add log'}), 500
 
 @app.route('/api/logs/<tag_id>', methods=['GET'])
 def get_logs(tag_id):
+    print(f"Fetching logs for tag {tag_id}")
     logs = db.get_logs(tag_id)
+    print(f"Found {len(logs)} logs: {logs}")
     return jsonify(logs)
 
 @app.route('/api/all-logs', methods=['GET'])
 def get_all_logs():
+    print("Fetching all logs...")
     logs = db.get_all_logs()
+    print(f"Found {len(logs)} logs: {logs}")
     return jsonify(logs)
 
 @app.route('/api/create_test_tag')
@@ -66,7 +76,7 @@ def create_test_tag():
     """Maak een test tag aan voor development"""
     try:
         print("Test tag aanmaken...")
-        db.add_tag('TEST001', 50.8503, 4.3517)  # Brussel coördinaten
+        db.add_tag('TEST001', 'Test Cache', 50.8503, 4.3517)  # Brussel coördinaten
         print("Test tag aangemaakt, controleren of deze bestaat...")
         tag = db.get_tag('TEST001')
         print(f"Tag controle resultaat: {tag}")
