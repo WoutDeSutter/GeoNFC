@@ -8,7 +8,13 @@ app = Flask(__name__, static_folder='../static')
 CORS(app)
 
 # Initialiseer de database
-db = Database()
+try:
+    db = Database()
+    print("Database initialized successfully in app.py")
+except Exception as e:
+    print(f"Error initializing database in app.py: {e}")
+    # Optionally, re-raise the exception if you want the deployment to fail explicitly
+    # raise
 
 # Initialiseer de scheduler
 # init_scheduler()
