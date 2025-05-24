@@ -76,11 +76,35 @@ def create_test_tag():
     """Maak een test tag aan voor development"""
     try:
         print("Test tag aanmaken...")
-        db.add_tag('TEST001', 'Test Cache', 50.8503, 4.3517)  # Brussel coördinaten
+        # Eerst controleren of de tag al bestaat
+        existing_tag = db.get_tag('TEST001')
+        if existing_tag:
+            print(f"Tag TEST001 bestaat al: {existing_tag}")
+            return jsonify({
+                'success': True, 
+                'message': 'Test tag TEST001 already exists', 
+                'tag': existing_tag
+            })
+
+        # Tag aanmaken als deze nog niet bestaat
+        success = db.add_tag('TEST001', 'Test Cache', 50.8503, 4.3517)  # Brussel coördinaten
+        if not success:
+            print("Kon test tag niet aanmaken")
+            return jsonify({'error': 'Failed to create test tag'}), 500
+
         print("Test tag aangemaakt, controleren of deze bestaat...")
         tag = db.get_tag('TEST001')
         print(f"Tag controle resultaat: {tag}")
-        return jsonify({'success': True, 'message': 'Test tag TEST001 created', 'tag': tag})
+        
+        if not tag:
+            print("Tag niet gevonden na aanmaken!")
+            return jsonify({'error': 'Tag not found after creation'}), 500
+
+        return jsonify({
+            'success': True, 
+            'message': 'Test tag TEST001 created', 
+            'tag': tag
+        })
     except Exception as e:
         print(f"Error bij aanmaken test tag: {str(e)}")
         return jsonify({'error': str(e)}), 500
