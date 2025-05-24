@@ -25,6 +25,11 @@ init_scheduler()
 @app.route('/api/caches', methods=['GET'])
 def get_caches():
     print("Fetching all caches...")
+    # Add pagination parameters
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 20, type=int)
+    # You would ideally pass these to your db.get_all_tags() method
+    # caches = db.get_all_tags(page=page, per_page=per_page)
     caches = db.get_all_tags()
     print(f"Found {len(caches)} caches: {caches}")
     return jsonify(caches)
@@ -68,6 +73,11 @@ def add_log():
 @app.route('/api/logs/<tag_id>', methods=['GET'])
 def get_logs(tag_id):
     print(f"Fetching logs for tag {tag_id}")
+    # Add pagination parameters
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 20, type=int)
+    # You would ideally pass these to your db.get_logs() method
+    # logs = db.get_logs(tag_id, page=page, per_page=per_page)
     logs = db.get_logs(tag_id)
     print(f"Found {len(logs)} logs: {logs}")
     return jsonify(logs)
@@ -75,6 +85,11 @@ def get_logs(tag_id):
 @app.route('/api/all-logs', methods=['GET'])
 def get_all_logs():
     print("Fetching all logs...")
+    # Add pagination parameters
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 20, type=int)
+    # You would ideally pass these to your db.get_all_logs() method
+    # logs = db.get_all_logs(page=page, per_page=per_page)
     logs = db.get_all_logs()
     print(f"Found {len(logs)} logs: {logs}")
     return jsonify(logs)

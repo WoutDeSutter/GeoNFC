@@ -248,12 +248,15 @@ class Database:
             print(f"Unexpected error getting tag: {str(e)}")
             return None
 
-    def get_all_tags(self):
+    def get_all_tags(self, page=1, per_page=20):
         try:
-            print("Executing get_all_tags query...")
+            print("Executing get_all_tags query with pagination...")
+            offset = (page - 1) * per_page
             
             def get_tags_with_retry():
-                self.cursor.execute("SELECT * FROM tags")
+                query = "SELECT * FROM tags LIMIT %s OFFSET %s"
+                print(f"Executing query: {query} with params: ({per_page}, {offset})")
+                self.cursor.execute(query, (per_page, offset,))
                 return self.cursor.fetchall()
 
             # Probeer de tags meerdere keren op te halen
@@ -312,12 +315,15 @@ class Database:
             self.conn.rollback()
             return False
 
-    def get_logs(self, tag_id):
+    def get_logs(self, tag_id, page=1, per_page=20):
         try:
-            print(f"Getting logs for tag {tag_id}")
+            print(f"Getting logs for tag {tag_id} with pagination...")
+            offset = (page - 1) * per_page
             
             def get_logs_with_retry():
-                self.cursor.execute("SELECT * FROM logs WHERE tag_id = %s ORDER BY timestamp DESC", (tag_id,))
+                query = "SELECT * FROM logs WHERE tag_id = %s ORDER BY timestamp DESC LIMIT %s OFFSET %s"
+                print(f"Executing query: {query} with params: ({tag_id}, {per_page}, {offset})")
+                self.cursor.execute(query, (tag_id, per_page, offset,))
                 return self.cursor.fetchall()
 
             # Probeer de logs meerdere keren op te halen
@@ -339,12 +345,15 @@ class Database:
             print(f"Unexpected error getting logs: {str(e)}")
             return []
 
-    def get_all_logs(self):
+    def get_all_logs(self, page=1, per_page=20):
         try:
-            print("Getting all logs")
+            print("Getting all logs with pagination...")
+            offset = (page - 1) * per_page
             
             def get_all_logs_with_retry():
-                self.cursor.execute("SELECT * FROM logs ORDER BY timestamp DESC")
+                query = "SELECT * FROM logs ORDER BY timestamp DESC LIMIT %s OFFSET %s"
+                print(f"Executing query: {query} with params: ({per_page}, {offset})")
+                self.cursor.execute(query, (per_page, offset,))
                 return self.cursor.fetchall()
 
             # Probeer de logs meerdere keren op te halen
